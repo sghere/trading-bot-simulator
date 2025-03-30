@@ -1,35 +1,45 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchStockData } from "./features/stockSlice.ts";
+import { simpleMovingAverage, exponentialMovingAverage } from "./utils/algorithms.ts";
+import Chart from "./components/Chart.tsx";
+import { AppDispatch } from "./redux/store.ts";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const dispatch:AppDispatch = useDispatch();
+  const data = useSelector((state: { stock: { data: any[] } }) => state.stock.data);
+  const [symbol, setSymbol] = useState("AAPL");
+
+  useEffect(() => {
+    dispatch(fetchStockData(symbol));
+  }, [dispatch, symbol]);
+
+const chartData = React.useMemo(() => {
+    if (data.length) {
+      const sma = simpleMovingAverage(data, 16);
+      const ema = exponentialMovingAverage(data, 16);
+      return data.map((item, index: number) => ({
+        ...item,
+        sma: sma[index] || null,
+        ema: ema[index] || null,
+      }));
+    }
+    return [];
+  }, [data]);
 
   return (
-    <>
-      <div className='bg-gray-200'>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="p-8 bg-gray-900 min-h-screen text-white">
+      <h1 className="text-3xl font-bold mb-4">Algorithmic Trading Bot Simulator</h1>
+      <input
+        type="text"
+        value={symbol}
+        onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+        placeholder="Enter Stock Symbol (e.g., AAPL)"
+        className="p-2 mb-4 text-black rounded"
+      />
+      {chartData.length ? <Chart data={chartData} /> : <p>Loading...</p>}
+    </div>
+  );
 }
 
-export default App
+export default App;

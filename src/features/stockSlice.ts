@@ -2,10 +2,13 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
 // Fetch stock data asynchronously
-export const fetchStockData = createAsyncThunk(
+export const fetchStockData = createAsyncThunk<
+  StockData[],
+  string
+>(
   "stock/fetchStockData",
-  async (symbol) => {
-    const API_KEY = "YOUR_ALPHA_VANTAGE_API_KEY";
+  async (symbol: string) => {
+    const API_KEY = "123";
     const response = await axios.get(
       `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${API_KEY}`
     );
@@ -17,12 +20,24 @@ export const fetchStockData = createAsyncThunk(
   }
 );
 
+interface StockData {
+  date: string;
+  close: number;
+}
+
+interface StockState {
+  data: StockData[];
+  status: string;
+}
+
+const initialState: StockState = {
+  data: [],
+  status: "idle",
+};
+
 const stockSlice = createSlice({
   name: "stock",
-  initialState: {
-    data: [],
-    status: "idle",
-  },
+  initialState,
   reducers: {},
   extraReducers: (builder) => {
     builder
